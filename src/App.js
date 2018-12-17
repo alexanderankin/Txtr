@@ -103,7 +103,7 @@ class App extends Component {
             </p>
 
             <button
-              tabindex={-1}
+              tabIndex={-1}
               type="button"
               className="btn btn-link"
               onClick={ function(e) {
