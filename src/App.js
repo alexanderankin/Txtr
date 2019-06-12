@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import './App.css';
 
 import Stepper from 'react-stepper-horizontal';
@@ -314,15 +315,19 @@ class App extends Component {
                   this.state.fromPhone,
                   this.state.message,
                   this.state.ownPhone) }
-                senderAny={ shootText.bind(null,
-                  this.state.accountSID,
-                  this.state.authToken,
-                  this.state.fromPhone,
-                  this.state.message) }
+                senderAny={ (to, done) => {
+                  shootText(
+                    this.state.accountSID,
+                    this.state.authToken,
+                    this.state.fromPhone,
+                    this.state.message,
+                    to, done);
+                  } }
                 />
             </div>
             <div id="cmnm" className={ this.state.activeStep === 3 ? '' : 'collapse' }>
-              <p>Check out a local chapter of DSA sometime!</p>
+              {/*<p>Check out a local chapter of DSA sometime!</p>*/}
+              <p>Lorem ipsum amet adipisicing sint sed et enim eiusmod nulla occaecat aliqua anim magna culpa non sunt in do.</p>
             </div>
 
             <div style={{ float: 'right' }}>
@@ -348,6 +353,15 @@ export default App;
 
 // import React, { Component } from 'react';
 
+var phone = require('phone');
+
+function attemptToStandarizePhone(number) {
+  var result = phone(number);
+  if (result && result.length > 0) { return result[0]; }
+  return number;
+}
+
+
 class ComradeInput extends Component {
   constructor(props) {
     super(props);
@@ -365,7 +379,7 @@ class ComradeInput extends Component {
 
   click () {
     var comrades = this.state.comrades.split(this.state.delimiter);
-    this.props.submit(comrades);
+    this.props.submit(comrades.map(attemptToStandarizePhone));
   }
 
   render() {
@@ -458,7 +472,37 @@ class ComradeInput extends Component {
 
 // import React, { Component } from 'react';
 
+
 class Communications extends Component {
+  static propTypes = {
+    comrades: PropTypes.arrayOf(PropTypes.string).isRequired,
+    senderTest: PropTypes.func.isRequired,
+    senderAny: PropTypes.func.isRequired,
+  }
+
+  constructor(props) {
+    super(props);
+    console.log(props);
+
+    this.meatAndPotatoes = this.meatAndPotatoes.bind(this);
+  }
+
+  meatAndPotatoes() {
+    var errors = [];
+    (function sendNextText(comrades, comradeIndex) {
+      if (comradeIndex === comrades.length) {
+        alert("there were " + errors.length + " errors.");
+        console.log(errors);
+        return; // were done
+      }
+
+      this.props.senderAny(comrades[comradeIndex], function (err) {
+        if (err) { errors.push(err); }
+        sendNextText(comrades, comradeIndex + 1);
+      });
+    }.bind(this))(this.props.comrades, 0);
+  }
+
   render() {
     var btnStyle = {
       borderRadius: '100%',
@@ -474,7 +518,7 @@ class Communications extends Component {
             type="button"
             className="btn btn-light btn-sm"
             style={ Object.assign({ background: '#e95' }, btnStyle) }
-            onClick={ (e) => this.props.senderTest() }
+            onClick={ (e) => this.props.senderTest(err => alert(err)) }
             >
             Send me a test message
           </button>
@@ -484,6 +528,7 @@ class Communications extends Component {
             type="button"
             className="btn btn-light btn-sm"
             style={ Object.assign({ background: '#4f3' }, btnStyle) }
+            onClick={ (e) => this.meatAndPotatoes(e) }
             >
             Send mass text message
           </button>
@@ -496,6 +541,7 @@ class Communications extends Component {
 // export default Communications;
 
 function shootText(sid, token, From, Body, To, callback) {
+  console.log(arguments);
   var url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
   // var url = `http://localhost:3030`;
   var basic = sid + ':' + token;
